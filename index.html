@@ -3,993 +3,638 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ระบบบริหารพัสดุ อบต. V3 (Mobile Ready)</title>
+    <title>ระบบบัญชีวัสดุ อปท. (ว 1095 Edition)</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
+        /* --- Themes & Variables --- */
         :root {
-            --primary: #2c3e50;
-            --accent: #d35400;
+            --primary: #2980b9; /* สีฟ้าราชการ */
+            --header-bg: #ecf0f1;
             --success: #27ae60; 
             --danger: #c0392b; 
-            --void: #7f8fa6;
-            --bg-body: #ecf0f1;
-            --bg-card: #ffffff;
-            --border: #bdc3c7;
+            --void: #95a5a6;
+            --bg-body: #f4f6f9;
             --sidebar-width: 260px;
         }
         
         * { box-sizing: border-box; font-family: 'Sarabun', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; background: var(--bg-body); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- Mobile Header (Visible only on mobile) --- */
+        /* --- Header & Sidebar --- */
         .mobile-header {
-            display: none; /* Hidden on desktop */
-            background: var(--primary);
-            color: white;
-            padding: 15px;
-            align-items: center;
-            justify-content: space-between;
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 900;
-            height: 60px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none; background: var(--primary); color: white; padding: 15px; 
+            align-items: center; justify-content: space-between; position: fixed; top: 0; left: 0; right: 0; z-index: 900; height: 60px;
         }
-        .hamburger { font-size: 24px; cursor: pointer; padding: 5px; }
-
-        /* --- Sidebar --- */
+        
         .sidebar { 
-            width: var(--sidebar-width); 
-            background: var(--primary); 
-            color: white; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 20px; 
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
-            transition: transform 0.3s ease;
-            z-index: 1000;
+            width: var(--sidebar-width); background: #2c3e50; color: white; display: flex; flex-direction: column; padding: 20px; 
+            transition: transform 0.3s ease; z-index: 1000; box-shadow: 2px 0 5px rgba(0,0,0,0.1); overflow-y: auto;
         }
-        .sidebar h2 { margin: 0 0 20px 0; font-size: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; }
+        .sidebar h2 { text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 15px; margin-bottom: 20px; font-size: 18px; }
+        .close-sidebar { display: none; position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
         
-        /* Mobile Close Button */
-        .close-sidebar { display: none; position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; color: #ccc; }
+        .menu-item { padding: 12px 15px; cursor: pointer; border-radius: 4px; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; color: #bdc3c7; transition: 0.2s; }
+        .menu-item:hover, .menu-item.active { background: var(--primary); color: white; }
 
-        .user-profile { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; }
-        .user-profile input { background: transparent; border: none; color: #f1c40f; font-weight: bold; width: 100%; outline: none; }
-        
-        .menu-item { padding: 12px 15px; cursor: pointer; border-radius: 6px; margin-bottom: 5px; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
-        .menu-item:hover, .menu-item.active { background: rgba(255,255,255,0.15); font-weight: bold; border-left: 4px solid var(--accent); }
-        .menu-item i { width: 20px; text-align: center; }
-
-        /* --- Overlay for Mobile --- */
-        .overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 950;
-            display: none;
-            backdrop-filter: blur(2px);
+        .org-input {
+            background: rgba(0,0,0,0.2); border: 1px solid #555; color: #fff; padding: 8px; width: 100%; border-radius: 4px; margin-bottom: 20px; font-size: 13px;
         }
-        .overlay.show { display: block; }
 
         /* --- Main Content --- */
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; position: relative; }
-        
-        /* --- Sections --- */
+        .main-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
         .section { display: none; animation: fadeIn 0.3s; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- UI Components --- */
-        .card { background: var(--bg-card); border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #eee; }
-        
-        /* Responsive Grid */
+        /* --- Cards & Forms --- */
+        .card { background: white; border-radius: 4px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border-top: 3px solid var(--primary); }
         .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 8px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .stat-card h4 { margin: 0; color: #7f8fa6; font-size: 14px; }
-        .stat-card .val { font-size: 24px; font-weight: bold; color: var(--primary); margin-top: 5px; }
+        .stat-box { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; text-align: center; }
+        .stat-box h4 { margin: 0 0 5px; font-size: 14px; color: #7f8fa6; }
+        .stat-box .val { font-size: 22px; font-weight: bold; color: #2c3e50; }
 
-        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .full-width { grid-column: span 2; }
-        
-        /* Responsive Table Container */
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 200px; }
         label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #34495e; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; transition: 0.2s; font-size: 14px; }
-        input:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.1); }
-        input[readonly] { background: #f8f9fa; color: #7f8fa6; }
-
-        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; font-size: 14px; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-void { background: var(--void); color: white; }
-        .btn-edit { background: #f39c12; color: white; padding: 6px 12px; font-size: 12px; border-radius: 4px; }
-        .btn:active { transform: scale(0.98); }
-
-        /* --- Tables --- */
-        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; /* Force scroll on small screens */ }
-        th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid var(--border); color: #2c3e50; font-weight: 600; white-space: nowrap; }
-        td { padding: 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
-        tr:hover { background: #f1f2f6; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; background: #fff; }
         
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; color: white; font-weight: bold; white-space: nowrap; }
-        .bg-ok { background: var(--success); }
-        .bg-low { background: var(--accent); }
-        .bg-out { background: var(--danger); }
-        .bg-void { background: var(--void); text-decoration: line-through; }
-        .row-void { opacity: 0.5; background: #f2f2f2; }
-        .row-void td { text-decoration: line-through; color: #999; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-primary { background: var(--primary); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-void { background: var(--void); }
 
-        /* --- Modal --- */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        .modal.show { display: flex; }
-        .modal-content { background: white; padding: 25px; width: 90%; max-width: 600px; border-radius: 8px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        /* --- Excel-like Tables --- */
+        .table-responsive { overflow-x: auto; border: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 800px; }
+        th { background: #f0f0f0; padding: 10px; border: 1px solid #ccc; text-align: center; color: #333; font-weight: bold; white-space: nowrap; }
+        td { padding: 8px; border: 1px solid #ccc; vertical-align: middle; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        tr:nth-child(even) { background: #fafafa; }
 
-        /* --- MOBILE RESPONSIVE STYLES --- */
+        /* --- Mobile Responsive --- */
         @media (max-width: 768px) {
             .mobile-header { display: flex; }
-            
-            .sidebar {
-                position: fixed;
-                top: 0; bottom: 0; left: 0;
-                transform: translateX(-100%); /* Hide by default */
-                z-index: 1001;
-            }
+            .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); z-index: 1001; }
             .sidebar.show { transform: translateX(0); }
             .close-sidebar { display: block; }
-            
-            .main-content { padding: 80px 15px 20px 15px; /* Adjust top padding for header */ }
-            
-            /* Grids become single column */
+            .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 950; }
+            .overlay.show { display: block; }
+            .main-content { padding-top: 80px; }
             .summary-grid { grid-template-columns: 1fr 1fr; }
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
-            
-            /* Charts stack */
-            .card h4 { font-size: 16px; }
-            .stat-card .val { font-size: 20px; }
-            
-            div[style*="display:grid;"] { grid-template-columns: 1fr !important; }
-            
-            /* Button adjustments */
-            .btn { width: 100%; margin-bottom: 5px; }
-            .form-grid button { width: auto; } /* Keep edit buttons small */
+            .form-group { min-width: 100%; }
         }
-
-        @media (max-width: 480px) {
-            .summary-grid { grid-template-columns: 1fr; }
-        }
-
         @media print {
             .sidebar, .mobile-header, .no-print, .btn { display: none !important; }
-            body { background: white; height: auto; overflow: visible; display: block; }
-            .main-content { padding: 0; margin: 0; }
-            .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
-            th { border-bottom: 1px solid #000; }
-            .table-responsive { overflow: visible; }
-            table { min-width: 100%; }
+            body, .main-content { padding: 0; margin: 0; background: white; height: auto; overflow: visible; }
+            .card { box-shadow: none; border: none; }
+            table { width: 100%; border: 1px solid #000; }
+            th, td { border: 1px solid #000; }
         }
     </style>
 </head>
 <body>
 
 <div class="mobile-header">
-    <div class="hamburger" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
-    <div style="font-weight:bold; font-size:18px;">พัสดุ อบต. V3</div>
-    <div style="width:24px;"></div> </div>
-
+    <i class="fas fa-bars" style="font-size:24px; cursor:pointer;" onclick="toggleSidebar()"></i>
+    <span style="font-weight:bold;">ระบบพัสดุ อปท.</span>
+    <span></span>
+</div>
 <div class="overlay" onclick="toggleSidebar()"></div>
 
 <nav class="sidebar" id="sidebar">
     <div class="close-sidebar" onclick="toggleSidebar()"><i class="fas fa-times"></i></div>
-    <h2>🏛️ พัสดุ อบต.</h2>
+    <h2>🏛️ บัญชีวัสดุกลาง</h2>
     
-    <div class="user-profile">
-        <label style="color:#bdc3c7; font-size:11px;">ผู้ใช้งานปัจจุบัน</label>
-        <div style="display:flex; align-items:center; gap:5px;">
-            <i class="fas fa-user-circle"></i> 
-            <input type="text" id="currentUser" value="เจ้าหน้าที่พัสดุ" title="คลิกเพื่อเปลี่ยนชื่อ">
-        </div>
+    <div style="padding: 0 10px;">
+        <label style="color: #bdc3c7; font-size: 12px;">ชื่อหน่วยงาน (อปท.):</label>
+        <input type="text" id="orgNameInput" class="org-input" placeholder="เช่น องค์การบริหารส่วนตำบล..." onchange="updateOrgName(this.value)">
     </div>
 
-    <div class="menu-item active" onclick="showSection('dashboard'); toggleSidebarIfMobile();"><i class="fas fa-chart-pie"></i> ภาพรวม</div>
-    <div class="menu-item" onclick="showSection('transaction'); toggleSidebarIfMobile();"><i class="fas fa-exchange-alt"></i> บันทึก รับ-จ่าย</div>
-    <div class="menu-item" onclick="showSection('master-data'); toggleSidebarIfMobile();"><i class="fas fa-boxes"></i> ทะเบียนวัสดุ</div>
-    <div class="menu-item" onclick="showSection('reports'); toggleSidebarIfMobile();"><i class="fas fa-print"></i> รายงาน/ตรวจสอบ</div>
+    <div class="menu-item active" onclick="nav('dashboard')"><i class="fas fa-chart-line"></i> ภาพรวม (Dashboard)</div>
+    <div class="menu-item" onclick="nav('transaction')"><i class="fas fa-edit"></i> บันทึก รับ-จ่าย</div>
+    <div class="menu-item" onclick="nav('master')"><i class="fas fa-box"></i> ทะเบียนวัสดุ</div>
+    <div class="menu-item" onclick="nav('report')"><i class="fas fa-file-alt"></i> รายงานคงเหลือ</div>
     
-    <div style="margin-top:auto; font-size:12px; opacity:0.7; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
-        <div style="margin-bottom:5px;"><i class="fas fa-database"></i> Database</div>
-        <button onclick="backupData()" style="background:none; border:1px solid white; color:white; padding:8px; width:100%; cursor:pointer; text-align:left; margin-bottom:5px; border-radius:4px;">💾 Backup Data</button>
+    <div style="margin-top:auto; font-size:12px; opacity:0.7; padding-top:20px; border-top:1px solid #444;">
+        <div style="margin-bottom:5px;">จัดการฐานข้อมูล</div>
+        <button onclick="backupData()" style="width:100%; background:none; border:1px solid #777; color:#ddd; padding:5px; cursor:pointer; margin-bottom:5px;">Backup</button>
         <input type="file" id="restoreFile" hidden onchange="restoreData(this)">
-        <button onclick="document.getElementById('restoreFile').click()" style="background:none; border:1px solid white; color:white; padding:8px; width:100%; cursor:pointer; text-align:left; border-radius:4px;">♻️ Restore Data</button>
+        <button onclick="document.getElementById('restoreFile').click()" style="width:100%; background:none; border:1px solid #777; color:#ddd; padding:5px; cursor:pointer;">Restore</button>
     </div>
 </nav>
 
 <main class="main-content">
-    
+
     <div id="dashboard" class="section active">
-        <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:20px; gap:10px;">
-            <h3>📊 สรุปสถานการณ์</h3>
-            <div>
-                <select id="fiscalYearFilter" onchange="renderDashboard()" style="width:150px; padding:8px;">
-                    </select>
+        <div class="card">
+            <h3>📊 สรุปสถานะพัสดุ</h3>
+            <div class="summary-grid">
+                <div class="stat-box"><h4>มูลค่ารวม (บาท)</h4><div class="val" id="d-total-val">0</div></div>
+                <div class="stat-box"><h4>รายการเคลื่อนไหว</h4><div class="val" id="d-tx-count">0</div></div>
+                <div class="stat-box"><h4>ใกล้หมด (รายการ)</h4><div class="val" id="d-low-stock" style="color:#d35400">0</div></div>
+                <div class="stat-box"><h4>เบิกจ่าย (ครั้ง)</h4><div class="val" id="d-out-count">0</div></div>
             </div>
-        </div>
-
-        <div class="summary-grid">
-            <div class="stat-card" style="border-color: #27ae60;">
-                <h4>มูลค่ารับเข้า</h4>
-                <div class="val" id="d-total-in">0.00</div>
-            </div>
-            <div class="stat-card" style="border-color: #c0392b;">
-                <h4>มูลค่าเบิกจ่าย</h4>
-                <div class="val" id="d-total-out">0.00</div>
-            </div>
-            <div class="stat-card" style="border-color: #f39c12;">
-                <h4>รอสั่งซื้อ</h4>
-                <div class="val" id="d-low-stock">0</div>
-            </div>
-            <div class="stat-card" style="border-color: #2980b9;">
-                <h4>รายการเคลื่อนไหว</h4>
-                <div class="val" id="d-count-tx">0</div>
-            </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
-            <div class="card">
-                <h4>📈 การเบิกจ่ายรายเดือน</h4>
-                <div style="position: relative; height:200px;">
-                    <canvas id="chartMonthly"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <h4>🏆 หน่วยงานเบิกสูงสุด</h4>
-                <div style="position: relative; height:200px; display:flex; justify-content:center;">
-                    <canvas id="chartDivision"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card" style="margin-top:20px;">
-            <h4>⚠️ แจ้งเตือน: วัสดุต่ำกว่าจุดสั่งซื้อ</h4>
-            <div class="table-responsive">
-                <table id="alertTable">
-                    <thead><tr><th>รหัส</th><th>รายการ</th><th>คงเหลือ</th><th>จุดสั่งซื้อ</th><th>สถานะ</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+            <div style="height:250px;"><canvas id="chartCat"></canvas></div>
         </div>
     </div>
 
     <div id="transaction" class="section">
         <div class="card">
-            <h3>📝 บันทึกรายการ</h3>
-            <form id="txForm" onsubmit="handleTxSubmit(event)">
-                <input type="hidden" id="txId"> 
-                
-                <div class="form-grid">
-                    <div>
-                        <label>วันที่ (Date)</label>
+            <h3>📝 บันทึกรายการ (รับ-จ่าย)</h3>
+            <form id="txForm" onsubmit="saveTx(event)">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>วันที่ (วว/ดด/ปปปป)</label>
                         <input type="date" id="txDate" required>
                     </div>
-                    <div>
-                        <label>ประเภท (Type)</label>
-                        <select id="txType" onchange="toggleTxFields()" required>
-                            <option value="OUT">🔴 เบิกจ่าย (ใช้งาน)</option>
-                            <option value="IN">🟢 ตรวจรับ (ซื้อ/จ้าง)</option>
-                            <option value="ADJ">🔧 ปรับปรุงยอด</option>
+                    <div class="form-group">
+                        <label>ประเภทรายการ</label>
+                        <select id="txType" onchange="toggleTxUI()" required>
+                            <option value="OUT">🔴 จ่ายออก (ใบเบิก)</option>
+                            <option value="IN">🟢 รับเข้า (ตรวจรับ)</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="background:#f8f9fa; padding:15px; border-radius:6px; margin:15px 0; border:1px solid #eee;">
-                    <div class="form-grid">
-                        <div class="full-width">
-                            <label>เลือกวัสดุ</label>
-                            <input type="text" id="txProductSearch" list="masterList" placeholder="พิมพ์ชื่อเพื่อค้นหา..." onchange="fillProductInfo()" required>
-                            <datalist id="masterList"></datalist>
-                            <input type="hidden" id="txProdId">
+                <div style="background:#f9f9f9; padding:15px; border:1px solid #eee; margin-bottom:15px;">
+                    <div class="form-row">
+                        <div class="form-group" style="flex:2;">
+                            <label>เลือกรายการวัสดุ</label>
+                            <input type="text" id="txItem" list="dlItems" placeholder="พิมพ์ชื่อเพื่อค้นหา..." onchange="fillItemData()" required>
+                            <datalist id="dlItems"></datalist>
+                            <input type="hidden" id="txItemId">
                         </div>
-                        
-                        <div>
+                        <div class="form-group">
                             <label>จำนวน</label>
-                            <input type="number" id="txQty" min="0.01" step="0.01" required style="font-weight:bold; color:#2c3e50;">
+                            <input type="number" id="txQty" min="1" required style="font-weight:bold;">
                         </div>
-                        <div>
+                        <div class="form-group">
                             <label>หน่วยนับ</label>
                             <input type="text" id="txUnit" readonly>
                         </div>
-
-                        <div class="in-only full-width" style="display:none; border-top:1px dashed #ccc; padding-top:10px; margin-top:5px;">
-                             <label style="color:var(--success)">ข้อมูลเพิ่มเติม (สำหรับการรับเข้า)</label>
-                        </div>
-                        <div class="in-only" style="display:none;">
-                            <label>Lot / Batch No.</label>
-                            <input type="text" id="txLot" placeholder="Optional">
-                        </div>
-                        <div class="in-only" style="display:none;">
-                            <label>วันหมดอายุ</label>
-                            <input type="date" id="txExp">
-                        </div>
-                        
-                        <div class="in-only" style="display:none;">
-                            <label>ราคาต่อหน่วย (บาท)</label>
-                            <input type="number" id="txPrice" min="0" step="0.01" onchange="calcTotal()">
-                        </div>
-                        <div class="in-only" style="display:none;">
-                            <label>ราคารวม (บาท)</label>
-                            <input type="number" id="txTotal" readonly>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div class="out-only">
-                        <label>หน่วยงานผู้ขอเบิก</label>
-                        <select id="txDivision">
-                            <option value="">-- ไม่ระบุ --</option>
-                            <option value="สำนักปลัด">สำนักปลัด</option>
-                            <option value="กองคลัง">กองคลัง</option>
-                            <option value="กองช่าง">กองช่าง</option>
-                            <option value="กองการศึกษา">กองการศึกษา</option>
-                            <option value="กองสาธารณสุขฯ">กองสาธารณสุขฯ</option>
-                            <option value="กองสวัสดิการสังคม">กองสวัสดิการสังคม</option>
-                            <option value="หน่วยตรวจสอบภายใน">หน่วยตรวจสอบภายใน</option>
-                        </select>
-                    </div>
-                    <div class="out-only">
-                        <label>ชื่อผู้เบิก</label>
-                        <input type="text" id="txRequester">
                     </div>
                     
-                    <div class="in-only" style="display:none;">
-                        <label>ผู้ขาย / คู่สัญญา</label>
-                        <input type="text" id="txSupplier">
-                    </div>
-                    <div class="in-only" style="display:none;">
-                        <label>เลขที่เอกสารอ้างอิง</label>
-                        <input type="text" id="txRefDoc" placeholder="ระบุเลขที่...">
-                    </div>
-
-                    <div class="full-width">
-                        <label>หมายเหตุ</label>
-                        <input type="text" id="txRemark" placeholder="เช่น ใช้ในโครงการ... หรือ URL ไฟล์ภาพ">
+                    <div class="form-row" id="priceRow" style="display:none;">
+                        <div class="form-group">
+                            <label>ราคาต่อหน่วย (บาท)</label>
+                            <input type="number" id="txPrice" min="0" step="0.01" value="0">
+                        </div>
                     </div>
                 </div>
 
-                <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:10px; justify-content: flex-end;">
-                    <button type="button" class="btn" onclick="resetTxForm()" style="background:#bdc3c7;">ล้างค่า</button>
-                    <button type="button" id="voidBtn" class="btn btn-void" style="display:none;" onclick="voidTransaction()">🚫 ยกเลิก (Void)</button>
-                    <button type="submit" class="btn btn-primary" id="saveBtn"><i class="fas fa-save"></i> บันทึก</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label id="lblRef">รับจาก/จ่ายให้ (ระบุหน่วยงาน/ร้านค้า)</label>
+                        <input type="text" id="txRef" placeholder="เช่น กองคลัง, ร้านศึกษาภัณฑ์">
+                    </div>
+                    <div class="form-group">
+                        <label>เลขที่เอกสาร (ใบเบิก/ใบส่งของ)</label>
+                        <input type="text" id="txDoc" placeholder="เช่น 15/2569">
+                    </div>
                 </div>
+
+                <button type="submit" class="btn btn-primary" style="width:100%"><i class="fas fa-save"></i> บันทึกข้อมูล</button>
             </form>
         </div>
 
         <div class="card">
-            <h4>ประวัติการทำรายการล่าสุด (Audit Log)</h4>
+            <h4>ประวัติการทำรายการล่าสุด</h4>
             <div class="table-responsive">
                 <table>
                     <thead>
-                        <tr><th>วันที่</th><th>ประเภท</th><th>รายการ</th><th>จำนวน</th><th>อ้างอิง</th><th>ผู้ทำ</th><th>สถานะ</th><th>จัดการ</th></tr>
+                        <tr><th>วันที่</th><th>รายการ</th><th>รับ</th><th>จ่าย</th><th>คงเหลือ</th><th>ราคา/หน่วย</th><th>อ้างอิง</th><th>ลบ</th></tr>
                     </thead>
-                    <tbody id="txTableBody"></tbody>
+                    <tbody id="tbTx"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="master-data" class="section">
+    <div id="master" class="section">
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h3>📦 ทะเบียนวัสดุ</h3>
-                <button class="btn btn-success" onclick="openMasterModal()"><i class="fas fa-plus"></i> เพิ่ม</button>
-            </div>
-            
-            <input type="text" id="masterSearch" placeholder="🔍 ค้นหาชื่อวัสดุ..." onkeyup="renderMasterTable()" style="margin:10px 0;">
-            
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>รหัส</th>
-                            <th>ชื่อวัสดุ</th>
-                            <th>หมวดหมู่</th>
-                            <th>หน่วยนับ</th>
-                            <th>ขั้นต่ำ</th>
-                            <th>คงเหลือ</th>
-                            <th>จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="masterTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div id="reports" class="section">
-        <div class="card">
-            <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3>🖨️ ระบบรายงาน</h3>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn btn-primary" onclick="window.print()"><i class="fas fa-print"></i></button>
-                    <button class="btn btn-success" onclick="exportCSV()"><i class="fas fa-file-excel"></i></button>
+            <h3>📦 ทะเบียนคุมวัสดุ (Master Items)</h3>
+            <div class="form-row">
+                <div class="form-group" style="flex:2">
+                    <label>ชื่อวัสดุ</label>
+                    <input type="text" id="mName" placeholder="เช่น กระดาษ A4, หมึกพิมพ์">
                 </div>
-            </div>
-            
-            <div class="form-grid no-print" style="background:#f1f2f6; padding:15px; margin-bottom:20px; border-radius:8px;">
-                <div class="full-width">
-                    <label>ประเภทรายงาน</label>
-                    <select id="reportType" onchange="renderReport()">
-                        <option value="BALANCE">1. ยอดคงเหลือปัจจุบัน (Stock Balance)</option>
-                        <option value="MOVEMENT">2. ความเคลื่อนไหวรายตัว (Stock Card)</option>
-                        <option value="SUM_CAT">3. สรุปเบิกจ่าย ตามหมวดหมู่</option>
-                        <option value="SUM_DIV">4. สรุปเบิกจ่าย ตามหน่วยงาน</option>
+                <div class="form-group" style="flex:2">
+                    <label>ประเภท (ตาม ว 1095)</label>
+                    <select id="mCat">
+                        <option value="">-- เลือกประเภทวัสดุ --</option>
+                        <option>1. วัสดุสำนักงาน</option>
+                        <option>2. วัสดุไฟฟ้าและวิทยุ</option>
+                        <option>3. วัสดุงานบ้านงานครัว</option>
+                        <option>4. วัสดุก่อสร้าง</option>
+                        <option>5. วัสดุยานพาหนะและขนส่ง</option>
+                        <option>6. วัสดุเชื้อเพลิงและหล่อลื่น</option>
+                        <option>7. วัสดุวิทยาศาสตร์หรือการแพทย์</option>
+                        <option>8. วัสดุการเกษตร</option>
+                        <option>9. วัสดุโฆษณาและเผยแพร่</option>
+                        <option>10. วัสดุเครื่องแต่งกาย</option>
+                        <option>11. วัสดุกีฬา</option>
+                        <option>12. วัสดุคอมพิวเตอร์</option>
+                        <option>13. วัสดุการศึกษา</option>
+                        <option>14. วัสดุเครื่องดับเพลิง</option>
+                        <option>15. วัสดุสนาม</option>
+                        <option>16. วัสดุสำรวจ</option>
+                        <option>17. วัสดุดนตรีและนาฏศิลป์</option>
+                        <option>18. วัสดุจราจร</option>
+                        <option>19. วัสดุอื่น</option>
                     </select>
                 </div>
-                <div id="reportOptionContainer" class="full-width">
-                    <label>เลือกวัสดุ (Stock Card)</label>
-                    <input type="text" id="reportProduct" list="masterList" onchange="renderReport()" placeholder="พิมพ์ชื่อวัสดุ...">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>คุณลักษณะ/ขนาด</label>
+                    <input type="text" id="mSpec" placeholder="เช่น 80 แกรม, สีดำ">
                 </div>
+                <div class="form-group">
+                    <label>หน่วยนับ</label>
+                    <input type="text" id="mUnit" placeholder="เช่น กล่อง, แผ่น">
+                </div>
+                <div class="form-group" style="display:flex; align-items:end;">
+                    <button onclick="addMaster()" class="btn btn-success" style="width:100%;"><i class="fas fa-plus"></i> เพิ่มรายการ</button>
+                </div>
+            </div>
+            
+            <div class="table-responsive" style="margin-top:10px;">
+                <table>
+                    <thead>
+                        <tr><th>ที่</th><th>รายการ</th><th>ลักษณะ</th><th>ประเภท</th><th>หน่วย</th><th>คงเหลือ</th><th>ราคาล่าสุด</th><th>จัดการ</th></tr>
+                    </thead>
+                    <tbody id="tbMaster"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="report" class="section">
+        <div class="card">
+            <div class="no-print" style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                <h3>📑 รายงานวัสดุคงเหลือ</h3>
+                <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> พิมพ์</button>
+            </div>
+            
+            <div class="text-center" style="margin-bottom:20px;">
+                <h3 id="reportHeaderOrg">องค์การบริหารส่วนตำบล....</h3>
+                <h4>รายงานวัสดุคงเหลือ ประจำปีงบประมาณ <span id="reportYear">256X</span></h4>
+            </div>
+
+            <div class="no-print form-row">
+                 <div class="form-group">
+                     <label>กรองตามหมวดหมู่</label>
+                     <select id="repFilter" onchange="renderReport()">
+                         <option value="ALL">-- ทุกหมวดหมู่ --</option>
+                         <option>1. วัสดุสำนักงาน</option>
+                         <option>2. วัสดุไฟฟ้าและวิทยุ</option>
+                         <option>3. วัสดุงานบ้านงานครัว</option>
+                         <option>4. วัสดุก่อสร้าง</option>
+                         <option>5. วัสดุยานพาหนะและขนส่ง</option>
+                         <option>6. วัสดุเชื้อเพลิงและหล่อลื่น</option>
+                         <option>7. วัสดุวิทยาศาสตร์หรือการแพทย์</option>
+                         <option>8. วัสดุการเกษตร</option>
+                         <option>9. วัสดุโฆษณาและเผยแพร่</option>
+                         <option>10. วัสดุเครื่องแต่งกาย</option>
+                         <option>11. วัสดุกีฬา</option>
+                         <option>12. วัสดุคอมพิวเตอร์</option>
+                         <option>13. วัสดุการศึกษา</option>
+                         <option>14. วัสดุเครื่องดับเพลิง</option>
+                         <option>15. วัสดุสนาม</option>
+                         <option>16. วัสดุสำรวจ</option>
+                         <option>17. วัสดุดนตรีและนาฏศิลป์</option>
+                         <option>18. วัสดุจราจร</option>
+                         <option>19. วัสดุอื่น</option>
+                     </select>
+                 </div>
             </div>
 
             <div class="table-responsive">
-                <div id="reportOutput" style="min-height:300px;">
-                    <div style="text-align:center; color:#ccc; margin-top:50px;">กรุณาเลือกประเภทรายงาน</div>
-                </div>
+                <table id="repTable">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="width:50px;">ลำดับ</th>
+                            <th rowspan="2">ประเภท</th>
+                            <th rowspan="2">รายการวัสดุ (ขนาด/ลักษณะ)</th>
+                            <th colspan="3">คงเหลือ</th>
+                            <th rowspan="2">หมายเหตุ</th>
+                        </tr>
+                        <tr>
+                            <th>จำนวน</th>
+                            <th>ราคาต่อหน่วย</th>
+                            <th>จำนวนเงิน (บาท)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbReport"></tbody>
+                    <tfoot>
+                        <tr style="background:#eee; font-weight:bold;">
+                            <td colspan="5" class="text-right">รวมทั้งสิ้น</td>
+                            <td class="text-right" id="repTotalMoney">0.00</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
     </div>
 
 </main>
 
-<div id="masterModal" class="modal">
-    <div class="modal-content">
-        <h3>ข้อมูลวัสดุ (Master Data)</h3>
-        <form onsubmit="saveMasterItem(event)">
-            <input type="hidden" id="mId">
-            <label>รหัสวัสดุ (Auto/Manual)</label>
-            <input type="text" id="mCode" placeholder="เว้นว่างเพื่อสร้างอัตโนมัติ" style="margin-bottom:10px;">
-            
-            <label>ชื่อวัสดุ *</label>
-            <input type="text" id="mName" required style="margin-bottom:10px;">
-            
-            <div class="form-grid">
-                <div>
-                    <label>หมวดหมู่</label>
-                    <select id="mCategory">
-                        <option>วัสดุสำนักงาน</option>
-                        <option>วัสดุคอมพิวเตอร์</option>
-                        <option>วัสดุงานบ้านงานครัว</option>
-                        <option>วัสดุก่อสร้าง</option>
-                        <option>วัสดุไฟฟ้า/วิทยุ</option>
-                        <option>วัสดุยานพาหนะ</option>
-                        <option>น้ำมันเชื้อเพลิง</option>
-                        <option>ครุภัณฑ์ (ต่ำกว่าเกณฑ์)</option>
-                    </select>
-                </div>
-                <div>
-                    <label>หน่วยนับ *</label>
-                    <input type="text" id="mUnit" required placeholder="เช่น กล่อง">
-                </div>
-            </div>
-            
-            <div class="form-grid" style="margin-top:10px;">
-                <div>
-                    <label>จุดสั่งซื้อ (Min)</label>
-                    <input type="number" id="mMin" value="5">
-                </div>
-                <div>
-                    <label>สถานที่เก็บ</label>
-                    <input type="text" id="mLocation">
-                </div>
-            </div>
-
-            <div style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
-                <button type="button" class="btn btn-danger" onclick="document.getElementById('masterModal').classList.remove('show')">ปิด</button>
-                <button type="submit" class="btn btn-primary">บันทึก</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script>
-    // --- UI FUNCTIONS FOR MOBILE ---
+    // --- Data & Init ---
+    let DB = { items: [], tx: [] };
+    const DEFAULT_ORG = "องค์การบริหารส่วนตำบล (ตัวอย่าง)";
+    let orgName = localStorage.getItem('OrgName') || DEFAULT_ORG;
+
+    // ข้อมูลเริ่มต้น
+    const initData = [
+        {name: "กระดาษ A4", spec: "80 แกรม", cat: "1. วัสดุสำนักงาน", unit: "รีม", price: 120, bal: 50},
+        {name: "แฟ้มแขวน", spec: "สีส้ม", cat: "1. วัสดุสำนักงาน", unit: "เล่ม", price: 15, bal: 100},
+        {name: "หลอดไฟ LED", spec: "18 วัตต์", cat: "2. วัสดุไฟฟ้าและวิทยุ", unit: "หลอด", price: 80, bal: 20},
+        {name: "หมึกพิมพ์ Canon", spec: "PG-810 สีดำ", cat: "12. วัสดุคอมพิวเตอร์", unit: "ตลับ", price: 650, bal: 5}
+    ];
+
+    window.onload = () => {
+        loadDB();
+        // Setup Org Name
+        document.getElementById('orgNameInput').value = orgName;
+        document.getElementById('reportHeaderOrg').innerText = orgName;
+        
+        // Setup Year
+        const currentYear = new Date().getFullYear() + 543;
+        document.getElementById('reportYear').innerText = currentYear;
+
+        if(DB.items.length === 0) {
+            initData.forEach(d => {
+                DB.items.push({id: Date.now()+Math.random(), name: d.name, spec: d.spec, cat: d.cat, unit: d.unit, price: d.price});
+                // Fake Init Balance
+                DB.tx.push({id: Date.now()+Math.random(), date: '2025-10-01', type: 'IN', itemId: DB.items[DB.items.length-1].id, qty: d.bal, price: d.price, ref: 'ยอดยกมา', doc: '-'});
+            });
+            saveDB();
+        }
+        document.getElementById('txDate').valueAsDate = new Date();
+        renderAll();
+    };
+
+    // --- Core Functions ---
+    function nav(id) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(window.innerWidth <= 768) toggleSidebar();
+        if(id === 'report') renderReport();
+    }
+
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('show');
         document.querySelector('.overlay').classList.toggle('show');
     }
-    
-    function toggleSidebarIfMobile() {
-        if (window.innerWidth <= 768) {
-            toggleSidebar();
-        }
+
+    function updateOrgName(val) {
+        orgName = val || DEFAULT_ORG;
+        localStorage.setItem('OrgName', orgName);
+        document.getElementById('reportHeaderOrg').innerText = orgName;
     }
 
-    // --- GLOBAL DATA STORE ---
-    let DB = {
-        items: [],       
-        transactions: [] 
-    };
-
-    // --- INITIALIZATION ---
-    window.onload = function() {
-        loadData();
-        renderFiscalYearSelect();
-        renderDashboard();
-        showSection('dashboard');
-        updateMasterDatalist();
-        document.getElementById('txDate').valueAsDate = new Date();
-    };
-
-    // --- NAVIGATION ---
-    function showSection(id) {
-        document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        // Find menu item that called this function if possible, or manual active set
-    }
-
-    // --- MASTER DATA ---
-    function openMasterModal(id = null) {
-        document.getElementById('masterModal').classList.add('show');
-        if(id) {
-            const item = DB.items.find(x => x.id === id);
-            document.getElementById('mId').value = item.id;
-            document.getElementById('mCode').value = item.code || item.id;
-            document.getElementById('mName').value = item.name;
-            document.getElementById('mCategory').value = item.category;
-            document.getElementById('mUnit').value = item.unit;
-            document.getElementById('mMin').value = item.minStock;
-            document.getElementById('mLocation').value = item.location || '';
-        } else {
-            document.getElementById('mId').value = '';
-            document.getElementById('mCode').value = '';
-            document.getElementById('mName').value = '';
-            document.getElementById('mUnit').value = '';
-            document.getElementById('mMin').value = 5;
-            document.getElementById('mLocation').value = '';
-        }
-    }
-
-    function saveMasterItem(e) {
-        e.preventDefault();
-        const id = document.getElementById('mId').value;
-        const name = document.getElementById('mName').value.trim();
-        
-        if (!id && DB.items.some(x => x.name === name)) {
-            alert('ชื่อวัสดุนี้มีอยู่ในระบบแล้ว');
-            return;
-        }
-
-        const newItem = {
-            id: id ? parseInt(id) : Date.now(),
-            code: document.getElementById('mCode').value.trim() || Date.now().toString(),
-            name: name,
-            category: document.getElementById('mCategory').value,
-            unit: document.getElementById('mUnit').value,
-            minStock: parseInt(document.getElementById('mMin').value),
-            location: document.getElementById('mLocation').value
-        };
-
-        if(id) {
-            const idx = DB.items.findIndex(x => x.id == id);
-            DB.items[idx] = newItem;
-        } else {
-            DB.items.push(newItem);
-        }
-        
-        saveData();
-        document.getElementById('masterModal').classList.remove('show');
-        renderMasterTable();
-        updateMasterDatalist();
-    }
-
-    function renderMasterTable() {
-        const tbody = document.getElementById('masterTableBody');
-        const search = document.getElementById('masterSearch').value.toLowerCase();
-        tbody.innerHTML = '';
-        
-        DB.items.forEach(item => {
-            if(!item.name.toLowerCase().includes(search) && !item.category.toLowerCase().includes(search)) return;
-            const bal = getStockBalance(item.id);
-            const statusColor = bal <= item.minStock ? 'color:red; font-weight:bold;' : 'color:green;';
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.code}</td>
-                    <td>${sanitize(item.name)}</td>
-                    <td>${item.category}</td>
-                    <td>${item.unit}</td>
-                    <td>${item.minStock}</td>
-                    <td style="${statusColor}">${bal}</td>
-                    <td>
-                        <button class="btn-edit" onclick="openMasterModal(${item.id})">แก้ไข</button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    function updateMasterDatalist() {
-        const dl = document.getElementById('masterList');
-        dl.innerHTML = DB.items.map(i => `<option value="${i.name} (${i.code})">`).join('');
-    }
-
-    // --- TRANSACTION & LOGIC ---
-    function toggleTxFields() {
+    function toggleTxUI() {
         const type = document.getElementById('txType').value;
-        document.querySelectorAll('.in-only').forEach(el => el.style.display = (type === 'IN' || type === 'ADJ') ? 'block' : 'none');
-        document.querySelectorAll('.out-only').forEach(el => el.style.display = (type === 'OUT') ? 'block' : 'none');
+        document.getElementById('priceRow').style.display = (type === 'IN') ? 'flex' : 'none';
+        document.getElementById('lblRef').innerText = (type === 'IN') ? 'รับจาก (ร้านค้า)' : 'จ่ายให้ (กอง/ฝ่าย)';
     }
 
-    function fillProductInfo() {
-        const val = document.getElementById('txProductSearch').value;
-        const namePart = val.split(' (')[0];
-        const item = DB.items.find(i => i.name === namePart);
+    function fillItemData() {
+        const name = document.getElementById('txItem').value;
+        const item = DB.items.find(i => i.name === name);
         if(item) {
-            document.getElementById('txProdId').value = item.id;
+            document.getElementById('txItemId').value = item.id;
             document.getElementById('txUnit').value = item.unit;
-        } else {
-            document.getElementById('txProdId').value = '';
-            document.getElementById('txUnit').value = '';
+            document.getElementById('txPrice').value = item.price; 
         }
     }
 
-    function calcTotal() {
-        const qty = parseFloat(document.getElementById('txQty').value) || 0;
-        const price = parseFloat(document.getElementById('txPrice').value) || 0;
-        document.getElementById('txTotal').value = (qty * price).toFixed(2);
-    }
-
-    function handleTxSubmit(e) {
+    function saveTx(e) {
         e.preventDefault();
-        const itemId = document.getElementById('txProdId').value;
-        if(!itemId) { alert('ไม่พบวัสดุในระบบ กรุณาเลือกจากรายการ'); return; }
+        const itemId = document.getElementById('txItemId').value;
+        const item = DB.items.find(i => i.id == itemId);
+        
+        if(!item) { alert('ไม่พบวัสดุ กรุณาเพิ่มในทะเบียนก่อน'); return; }
 
         const type = document.getElementById('txType').value;
         const qty = parseFloat(document.getElementById('txQty').value);
-        
+        const price = parseFloat(document.getElementById('txPrice').value) || 0;
+
         if(type === 'OUT') {
-            const currentStock = getStockBalance(itemId);
-            const editId = document.getElementById('txId').value;
-            if(!editId && qty > currentStock) {
-                alert(`ยอดคงเหลือไม่พอ! (มี: ${currentStock}, เบิก: ${qty})`);
-                return;
-            }
+            const bal = getBal(itemId);
+            if(qty > bal) { alert(`คงเหลือไม่พอ (มี ${bal})`); return; }
+        } else {
+            // Update Last Price on IN
+            item.price = price; 
         }
 
-        const currentUser = document.getElementById('currentUser').value;
-        const now = new Date().toISOString();
-
-        const txData = {
-            id: document.getElementById('txId').value ? parseInt(document.getElementById('txId').value) : Date.now(),
+        const tx = {
+            id: Date.now(),
             date: document.getElementById('txDate').value,
             type: type,
-            itemId: parseInt(itemId),
+            itemId: parseFloat(itemId),
             qty: qty,
-            price: parseFloat(document.getElementById('txPrice').value) || 0,
-            division: document.getElementById('txDivision').value,
-            requester: document.getElementById('txRequester').value,
-            supplier: document.getElementById('txSupplier').value,
-            refDoc: document.getElementById('txRefDoc').value,
-            remark: document.getElementById('txRemark').value,
-            lot: document.getElementById('txLot').value,
-            exp: document.getElementById('txExp').value,
-            user: currentUser,
-            status: 'ACTIVE',
-            timestamp: now,
-            history: [] 
+            price: type==='IN'?price:item.price,
+            ref: document.getElementById('txRef').value,
+            doc: document.getElementById('txDoc').value
         };
 
-        const editIdx = DB.transactions.findIndex(t => t.id === txData.id);
-        
-        if(editIdx >= 0) {
-            const oldTx = DB.transactions[editIdx];
-            txData.history = oldTx.history || [];
-            txData.history.push({ action: 'EDIT', date: now, user: currentUser });
-            DB.transactions[editIdx] = txData;
-        } else {
-            DB.transactions.push(txData);
-        }
-
-        saveData();
-        resetTxForm();
+        DB.tx.push(tx);
+        saveDB();
         renderTxTable();
-        alert('บันทึกเรียบร้อย');
+        renderDashboard();
+        e.target.reset();
+        document.getElementById('txDate').valueAsDate = new Date();
     }
 
-    function voidTransaction() {
-        const id = parseInt(document.getElementById('txId').value);
-        if(!id) return;
-        if(!confirm('ยืนยันการยกเลิกรายการนี้?')) return;
+    function addMaster() {
+        const name = document.getElementById('mName').value;
+        const spec = document.getElementById('mSpec').value;
+        const cat = document.getElementById('mCat').value;
+        const unit = document.getElementById('mUnit').value;
 
-        const idx = DB.transactions.findIndex(t => t.id === id);
-        if(idx >= 0) {
-            DB.transactions[idx].status = 'VOID';
-            DB.transactions[idx].history.push({ action: 'VOID', date: new Date().toISOString(), user: document.getElementById('currentUser').value });
-            saveData();
-            resetTxForm();
-            renderTxTable();
+        if(!name || !cat || !unit) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return;
         }
+
+        DB.items.push({
+            id: Date.now(),
+            name: name,
+            spec: spec,
+            cat: cat,
+            unit: unit,
+            price: 0
+        });
+        saveDB();
+        renderMasterTable();
+        
+        // Clear Form
+        document.getElementById('mName').value = '';
+        document.getElementById('mSpec').value = '';
+        document.getElementById('mUnit').value = '';
+    }
+
+    // --- Render Logic ---
+    function getBal(itemId) {
+        return DB.tx.filter(t => t.itemId == itemId).reduce((acc, t) => acc + (t.type==='IN'?t.qty:-t.qty), 0);
+    }
+
+    function renderAll() {
+        updateDatalist();
+        renderTxTable();
+        renderMasterTable();
+        renderDashboard();
+    }
+
+    function updateDatalist() {
+        document.getElementById('dlItems').innerHTML = DB.items.map(i => `<option value="${i.name}">`).join('');
     }
 
     function renderTxTable() {
-        const tbody = document.getElementById('txTableBody');
+        const tbody = document.getElementById('tbTx');
         tbody.innerHTML = '';
-        const list = DB.transactions.slice().sort((a,b) => new Date(b.date) - new Date(a.date));
-        
-        list.slice(0, 50).forEach(t => { 
-            const item = DB.items.find(i => i.id === t.itemId);
-            const itemName = item ? item.name : 'Unknown';
-            const ref = t.type === 'IN' ? (t.supplier || '-') : (t.division || '-');
-            
-            let badgeClass = '';
-            let typeLabel = '';
-            if(t.status === 'VOID') { badgeClass = 'bg-void'; typeLabel = 'ยกเลิก'; }
-            else if(t.type === 'IN') { badgeClass = 'bg-ok'; typeLabel = 'รับเข้า'; }
-            else if(t.type === 'OUT') { badgeClass = 'bg-out'; typeLabel = 'เบิกจ่าย'; }
-            else { badgeClass = 'bg-low'; typeLabel = 'ปรับปรุง'; }
-
+        DB.tx.slice().reverse().slice(0, 50).forEach(t => {
+            const item = DB.items.find(i => i.id == t.itemId);
             tbody.innerHTML += `
-                <tr class="${t.status === 'VOID' ? 'row-void' : ''}">
-                    <td>${t.date}</td>
-                    <td><span class="status-badge ${badgeClass}">${typeLabel}</span></td>
-                    <td>${sanitize(itemName)} <br><small style="color:#aaa">${t.remark||''}</small></td>
-                    <td style="font-weight:bold;">${t.qty} ${item?item.unit:''}</td>
-                    <td>${sanitize(ref)}</td>
-                    <td><small>${sanitize(t.user)}</small></td>
-                    <td>${t.status === 'VOID' ? '❌' : '✅'}</td>
-                    <td>
-                        <button class="btn-edit" onclick="loadTxForEdit(${t.id})">แก้ไข</button>
-                    </td>
+                <tr>
+                    <td>${formatDate(t.date)}</td>
+                    <td>${item?item.name:'-'}</td>
+                    <td class="text-center" style="color:green">${t.type==='IN'?t.qty:'-'}</td>
+                    <td class="text-center" style="color:red">${t.type==='OUT'?t.qty:'-'}</td>
+                    <td class="text-center">--</td> 
+                    <td class="text-right">${t.price}</td>
+                    <td>${t.ref} <small class="text-muted">#${t.doc}</small></td>
+                    <td class="text-center"><button class="btn-danger" style="padding:2px 5px;" onclick="delTx(${t.id})">×</button></td>
                 </tr>
             `;
         });
     }
 
-    function loadTxForEdit(id) {
-        const t = DB.transactions.find(x => x.id === id);
-        if(!t) return;
-        
-        const item = DB.items.find(i => i.id === t.itemId);
-        
-        document.getElementById('txId').value = t.id;
-        document.getElementById('txDate').value = t.date;
-        document.getElementById('txType').value = t.type;
-        toggleTxFields();
-        
-        document.getElementById('txProductSearch').value = item ? `${item.name} (${item.code})` : '';
-        document.getElementById('txProdId').value = t.itemId;
-        document.getElementById('txUnit').value = item ? item.unit : '';
-        document.getElementById('txQty').value = t.qty;
-        document.getElementById('txPrice').value = t.price || 0;
-        calcTotal();
-        
-        document.getElementById('txDivision').value = t.division || '';
-        document.getElementById('txRequester').value = t.requester || '';
-        document.getElementById('txSupplier').value = t.supplier || '';
-        document.getElementById('txRefDoc').value = t.refDoc || '';
-        document.getElementById('txRemark').value = t.remark || '';
-        document.getElementById('txLot').value = t.lot || '';
-        document.getElementById('txExp').value = t.exp || '';
-        
-        document.getElementById('voidBtn').style.display = 'inline-block';
-        if(t.status === 'VOID') {
-             document.getElementById('saveBtn').disabled = true;
-             document.getElementById('voidBtn').disabled = true;
-        } else {
-             document.getElementById('saveBtn').disabled = false;
-             document.getElementById('voidBtn').disabled = false;
-        }
-
-        document.getElementById('saveBtn').innerHTML = '<i class="fas fa-edit"></i> บันทึกการแก้ไข';
-        window.scrollTo(0,0);
-    }
-
-    function resetTxForm() {
-        document.getElementById('txForm').reset();
-        document.getElementById('txId').value = '';
-        document.getElementById('voidBtn').style.display = 'none';
-        document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save"></i> บันทึก';
-        document.getElementById('saveBtn').disabled = false;
-        document.getElementById('txDate').valueAsDate = new Date();
-    }
-
-    // --- DASHBOARD & REPORTS ---
-    function getStockBalance(itemId) {
-        const txs = DB.transactions.filter(t => t.itemId == itemId && t.status !== 'VOID');
-        const income = txs.filter(t => t.type === 'IN' || (t.type === 'ADJ' && t.qty > 0)).reduce((s,t) => s + t.qty, 0);
-        const expense = txs.filter(t => t.type === 'OUT' || (t.type === 'ADJ' && t.qty < 0)).reduce((s,t) => s + Math.abs(t.qty), 0);
-        return parseFloat((income - expense).toFixed(2));
-    }
-
-    function renderDashboard() {
-        const fy = document.getElementById('fiscalYearFilter').value;
-        const [start, end] = getFiscalDateRange(fy);
-        const txs = DB.transactions.filter(t => t.status !== 'VOID' && t.date >= start && t.date <= end);
-        
-        const totalIn = txs.filter(t => t.type === 'IN').reduce((s, t) => s + (t.qty * t.price), 0);
-        const totalOut = txs.filter(t => t.type === 'OUT').length; 
-        
-        document.getElementById('d-total-in').innerText = totalIn.toLocaleString('th-TH', {minimumFractionDigits:2});
-        document.getElementById('d-count-tx').innerText = txs.length;
-        
-        let lowCount = 0;
-        const alertBody = document.querySelector('#alertTable tbody');
-        alertBody.innerHTML = '';
-        DB.items.forEach(item => {
-            const bal = getStockBalance(item.id);
-            if(bal <= item.minStock) {
-                lowCount++;
-                const status = bal <= 0 ? '<span class="status-badge bg-out">หมด</span>' : '<span class="status-badge bg-low">ต่ำ</span>';
-                alertBody.innerHTML += `<tr><td>${item.code}</td><td>${item.name}</td><td>${bal} ${item.unit}</td><td>${item.minStock}</td><td>${status}</td></tr>`;
-            }
+    function renderMasterTable() {
+        const tbody = document.getElementById('tbMaster');
+        tbody.innerHTML = '';
+        DB.items.forEach((i, idx) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-center">${idx+1}</td>
+                    <td>${i.name}</td>
+                    <td><small style="color:#666">${i.spec || '-'}</small></td>
+                    <td>${i.cat}</td>
+                    <td class="text-center">${i.unit}</td>
+                    <td class="text-center font-weight-bold">${getBal(i.id)}</td>
+                    <td class="text-right">${i.price}</td>
+                    <td class="text-center"><button class="btn-danger" onclick="delItem(${i.id})">ลบ</button></td>
+                </tr>
+            `;
         });
-        document.getElementById('d-low-stock').innerText = lowCount;
-        
-        renderCharts(txs);
     }
 
     function renderReport() {
-        const type = document.getElementById('reportType').value;
-        const div = document.getElementById('reportOutput');
-        const optionCont = document.getElementById('reportOptionContainer');
-        div.innerHTML = '';
-        optionCont.style.display = (type === 'MOVEMENT') ? 'block' : 'none';
+        const filter = document.getElementById('repFilter').value;
+        const tbody = document.getElementById('tbReport');
+        tbody.innerHTML = '';
+        let totalMoney = 0;
+        let seq = 1;
 
-        if(type === 'BALANCE') {
-            let html = `<h4>รายงานยอดคงเหลือปัจจุบัน</h4>
-                        <table style="width:100%; border:1px solid #ddd;">
-                        <thead><tr style="background:#eee;"><th>รหัส</th><th>รายการ</th><th>หมวด</th><th>คงเหลือ</th><th>หน่วย</th><th>สถานที่เก็บ</th></tr></thead><tbody>`;
-            DB.items.sort((a,b) => a.code.localeCompare(b.code)).forEach(i => {
-                const bal = getStockBalance(i.id);
-                html += `<tr><td>${i.code}</td><td>${i.name}</td><td>${i.category}</td><td><b>${bal}</b></td><td>${i.unit}</td><td>${i.location||'-'}</td></tr>`;
-            });
-            html += `</tbody></table>`;
-            div.innerHTML = html;
+        // Sort Items by Category then Name
+        const sortedItems = [...DB.items].sort((a,b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
 
-        } else if (type === 'MOVEMENT') {
-            const searchName = document.getElementById('reportProduct').value;
-            const name = searchName.split(' (')[0];
-            const item = DB.items.find(i => i.name === name);
-            if(!item) { div.innerHTML = '<p style="color:red; text-align:center; padding:20px;">กรุณาพิมพ์ชื่อและเลือกวัสดุจากรายการ</p>'; return; }
-
-            const txs = DB.transactions.filter(t => t.itemId === item.id && t.status !== 'VOID').sort((a,b) => new Date(a.date) - new Date(b.date));
-            let balance = 0;
-            let html = `<h4>บัญชีวัสดุ: ${item.name}</h4>
-                        <p>รหัส: ${item.code} | หน่วยนับ: ${item.unit} | จุดสั่งซื้อ: ${item.minStock}</p>
-                        <table style="width:100%; border:1px solid #ddd;">
-                        <thead><tr style="background:#eee;"><th>วัน/เดือน/ปี</th><th>อ้างอิง</th><th>รับจาก/จ่ายให้</th><th>รับ</th><th>จ่าย</th><th>คงเหลือ</th><th>หมายเหตุ</th></tr></thead><tbody>`;
+        sortedItems.forEach(i => {
+            if(filter !== 'ALL' && i.cat !== filter) return;
+            const bal = getBal(i.id);
+            if(bal === 0) return; 
             
-            txs.forEach(t => {
-                let inQty = 0, outQty = 0;
-                if(t.type === 'IN') inQty = t.qty;
-                else if(t.type === 'OUT') outQty = t.qty;
-                else if(t.type === 'ADJ') { t.qty > 0 ? inQty = t.qty : outQty = Math.abs(t.qty); }
-                balance += inQty - outQty;
-                html += `<tr>
-                    <td>${t.date}</td>
-                    <td>${t.refDoc || '-'}</td>
-                    <td>${t.type === 'IN' ? t.supplier : t.division}</td>
-                    <td style="color:green">${inQty > 0 ? inQty : ''}</td>
-                    <td style="color:red">${outQty > 0 ? outQty : ''}</td>
-                    <td><b>${parseFloat(balance.toFixed(2))}</b></td>
-                    <td>${t.remark || ''}</td>
-                </tr>`;
-            });
-            html += `</tbody></table>`;
-            div.innerHTML = html;
-        } else if (type === 'SUM_CAT') {
-             const cats = {};
-             DB.transactions.filter(t => t.type === 'OUT' && t.status !== 'VOID').forEach(t => {
-                 const i = DB.items.find(x => x.id === t.itemId);
-                 if(i) cats[i.category] = (cats[i.category] || 0) + 1;
-             });
-             let html = `<h4>สรุปการเบิกจ่ายตามหมวดหมู่ (ครั้ง)</h4><table style="width:100%"><thead><tr style="background:#eee;"><th>หมวดหมู่</th><th>จำนวน</th></tr></thead><tbody>`;
-             Object.keys(cats).forEach(c => html += `<tr><td>${c}</td><td>${cats[c]}</td></tr>`);
-             div.innerHTML = html + `</tbody></table>`;
-        } else if (type === 'SUM_DIV') {
-             const divs = {};
-             DB.transactions.filter(t => t.type === 'OUT' && t.status !== 'VOID').forEach(t => {
-                 const d = t.division || 'ไม่ระบุ';
-                 divs[d] = (divs[d] || 0) + 1;
-             });
-             let html = `<h4>สรุปการเบิกจ่ายตามหน่วยงาน (ครั้ง)</h4><table style="width:100%"><thead><tr style="background:#eee;"><th>หน่วยงาน</th><th>จำนวน</th></tr></thead><tbody>`;
-             Object.keys(divs).forEach(d => html += `<tr><td>${d}</td><td>${divs[d]}</td></tr>`);
-             div.innerHTML = html + `</tbody></table>`;
-        }
+            const money = bal * i.price;
+            totalMoney += money;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-center">${seq++}</td>
+                    <td>${i.cat}</td>
+                    <td>
+                        <b>${i.name}</b>
+                        <div style="font-size:12px; color:#555;">${i.spec || ''}</div>
+                    </td>
+                    <td class="text-center">${bal} ${i.unit}</td>
+                    <td class="text-right">${i.price.toLocaleString()}</td>
+                    <td class="text-right">${money.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+                    <td></td>
+                </tr>
+            `;
+        });
+        document.getElementById('repTotalMoney').innerText = totalMoney.toLocaleString(undefined, {minimumFractionDigits:2});
     }
 
-    // --- CHART LOGIC ---
-    let chart1=null, chart2=null;
-    function renderCharts(txs) {
-        const monthly = {};
-        txs.filter(t => t.type === 'OUT').forEach(t => {
-            const m = t.date.substring(0, 7);
-            monthly[m] = (monthly[m] || 0) + 1;
-        });
-        
-        const ctx1 = document.getElementById('chartMonthly').getContext('2d');
-        if(chart1) chart1.destroy();
-        chart1 = new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(monthly).sort(),
-                datasets: [{ label: 'ครั้ง', data: Object.values(monthly), backgroundColor: '#3498db' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false }
+    function renderDashboard() {
+        let totalVal = 0;
+        let lowStock = 0;
+        const catCount = {};
+
+        DB.items.forEach(i => {
+            const bal = getBal(i.id);
+            totalVal += bal * i.price;
+            if(bal < 5) lowStock++;
+            catCount[i.cat] = (catCount[i.cat] || 0) + 1;
         });
 
-        const divData = {};
-        txs.filter(t => t.type === 'OUT').forEach(t => {
-            const d = t.division || 'อื่นๆ';
-            divData[d] = (divData[d] || 0) + 1;
-        });
-        
-        const ctx2 = document.getElementById('chartDivision').getContext('2d');
-        if(chart2) chart2.destroy();
-        chart2 = new Chart(ctx2, {
-            type: 'pie',
+        document.getElementById('d-total-val').innerText = totalVal.toLocaleString(undefined, {minimumFractionDigits:0});
+        document.getElementById('d-tx-count').innerText = DB.tx.length;
+        document.getElementById('d-low-stock').innerText = lowStock;
+        document.getElementById('d-out-count').innerText = DB.tx.filter(t => t.type === 'OUT').length;
+
+        // Chart
+        const ctx = document.getElementById('chartCat').getContext('2d');
+        if(window.myChart) window.myChart.destroy();
+        window.myChart = new Chart(ctx, {
+            type: 'doughnut',
             data: {
-                labels: Object.keys(divData),
-                datasets: [{ data: Object.values(divData), backgroundColor: ['#e74c3c','#f1c40f','#2ecc71','#9b59b6','#34495e','#1abc9c'] }]
+                labels: Object.keys(catCount),
+                datasets: [{ data: Object.values(catCount), backgroundColor: ['#3498db','#e74c3c','#f1c40f','#2ecc71','#9b59b6'] }]
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
     }
 
-    function sanitize(str) { return str ? str.replace(/</g, "&lt;").replace(/>/g, "&gt;") : ''; }
-    function getFiscalDateRange(year) {
-        const y = parseInt(year) - 543;
-        return [`${y-1}-10-01`, `${y}-09-30`];
+    // --- Utils ---
+    function formatDate(d) {
+        const date = new Date(d);
+        return `${date.getDate()}/${date.getMonth()+1}/${date.getFullYear()+543}`;
     }
-    function renderFiscalYearSelect() {
-        const curY = new Date().getFullYear() + 543;
-        const sel = document.getElementById('fiscalYearFilter');
-        for(let i=0; i<5; i++) {
-            const y = curY - i + 1;
-            sel.innerHTML += `<option value="${y}">ปีงบ ${y}</option>`;
+    
+    function delTx(id) {
+        if(confirm('ยืนยันการลบ?')) {
+            DB.tx = DB.tx.filter(t => t.id !== id);
+            saveDB(); renderAll();
         }
-        const m = new Date().getMonth() + 1;
-        sel.value = (m >= 10) ? curY + 1 : curY;
     }
-    function saveData() { localStorage.setItem('SAO_DB_V3', JSON.stringify(DB)); }
-    function loadData() {
-        const d = localStorage.getItem('SAO_DB_V3');
-        if(d) { DB = JSON.parse(d); }
+    
+    function delItem(id) {
+        if(confirm('ลบทะเบียนวัสดุ? (ประวัติจะหายไปด้วย)')) {
+            DB.items = DB.items.filter(i => i.id !== id);
+            DB.tx = DB.tx.filter(t => t.itemId !== id);
+            saveDB(); renderAll();
+        }
     }
+
+    function saveDB() { localStorage.setItem('SAO_V4_5', JSON.stringify(DB)); }
+    function loadDB() { const d = localStorage.getItem('SAO_V4_5'); if(d) DB = JSON.parse(d); }
+    
     function backupData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(DB));
         const a = document.createElement('a');
-        a.href = dataStr;
-        a.download = "sao_stock_v3_backup_" + new Date().toISOString().slice(0,10) + ".json";
-        a.click();
+        a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(DB));
+        a.download = "sao_backup.json"; a.click();
     }
     function restoreData(input) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            if(confirm('ยืนยันการกู้คืนข้อมูล?')) {
-                DB = JSON.parse(e.target.result);
-                saveData();
-                location.reload();
-            }
-        };
-        reader.readAsText(input.files[0]);
-    }
-    function exportCSV() {
-        let csv = "\uFEFFวันที่,สถานะ,ประเภท,รหัส,รายการ,จำนวน,หน่วย,อ้างอิง/หน่วยงาน,ผู้ทำรายการ,หมายเหตุ\n";
-        DB.transactions.forEach(t => {
-            const item = DB.items.find(i => i.id === t.itemId);
-            csv += `${t.date},${t.status},${t.type},${item?item.code:'-'},"${item?item.name:'-'}",${t.qty},"${item?item.unit:'-'}",${t.refDoc||t.division||t.supplier},${t.user},"${t.remark}"\n`;
-        });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
-        a.download = `sao_stock_report.csv`;
-        a.click();
+        const r = new FileReader();
+        r.onload = e => { DB = JSON.parse(e.target.result); saveDB(); location.reload(); };
+        r.readAsText(input.files[0]);
     }
 </script>
 </body>
