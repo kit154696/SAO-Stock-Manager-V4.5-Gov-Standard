@@ -113,6 +113,33 @@
         /* Print Styles - A4 Landscape Official */
         .print-area { padding: 10mm; font-size: 14px; background: white; min-height: 100%; overflow: auto; }
 
+        /* === SIGNATURE TABLE STYLES === */
+        .sign-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        .sign-table td {
+            border: 1px solid black !important;
+            padding: 10px;
+            vertical-align: top;
+            width: 50%;
+            height: 140px;
+            text-align: center;
+            font-size: 12pt;
+        }
+        .sign-caption {
+            text-align: left;
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .sign-line {
+            margin-top: 40px;
+            margin-bottom: 5px;
+        }
+
         @media (max-width: 768px) {
             .sidebar { position: fixed; left: -100%; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
             .sidebar.active { left: 0; }
@@ -136,8 +163,9 @@
             .print-table th { text-align: center; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
             .doc-header { text-align: center; margin-bottom: 20px; font-weight: bold; font-size: 16pt; }
             .doc-sub { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 12pt; }
-            .sign-box { margin-top: 40px; display: flex; justify-content: space-between; flex-wrap: wrap; }
-            .sign-item { width: 45%; text-align: center; margin-bottom: 30px; page-break-inside: avoid; }
+            
+            /* Ensure sign table borders print */
+            .sign-table td { border: 1px solid black !important; }
         }
     </style>
 </head>
@@ -1047,6 +1075,7 @@
             openPrint(html);
         }
 
+        // --- UPDATED PRINT WITHDRAW SLIP (2x2 Signatures) ---
         function printWithdrawSlip(txId) {
             const tx = DB.tx.find(t => t.id === txId);
             if (!tx) return;
@@ -1064,47 +1093,64 @@
                 `;
             });
 
+            // Using the requested signature layout
             const html = `
-                <div class="doc-header">ใบเบิกวัสดุ<br><span style="font-size:12pt; font-weight:normal">เลขที่ ${tx.docNo}</span></div>
-                <div class="doc-sub text-right">วันที่ ${getThaiDate(tx.date)}</div>
-                <p><b>เรียน</b> หัวหน้าหน่วยงานพัสดุ</p>
-                <p style="text-indent: 40px">ข้าพเจ้า <b>${tx.ref}</b> ขอเบิกวัสดุเพื่อใช้ราชการ ดังรายการต่อไปนี้</p>
+                <div class="doc-header">${DB.orgName}<br>ใบเบิกพัสดุ</div>
+                <div class="doc-sub">
+                    <div style="flex:1"></div>
+                    <div style="text-align:right">
+                        <div>เลขที่ ${tx.docNo}</div>
+                        <div>กอง/ฝ่าย ${tx.ref}</div>
+                        <div>วันที่ ${getThaiDate(tx.date)}</div>
+                    </div>
+                </div>
+                <p>ข้าพเจ้าขอเบิกพัสดุตามรายการต่อไปนี้เพื่อใช้ในงาน................................................................................</p>
                 
                 <table class="print-table">
                     <thead>
                         <tr>
                             <th width="10%">ลำดับ</th>
                             <th width="50%">รายการ</th>
-                            <th width="15%">จำนวนเบิก</th>
-                            <th width="10%">หน่วย</th>
+                            <th width="15%">จำนวน<br>ขอเบิก</th>
+                            <th width="10%">หน่วยนับ</th>
                             <th width="15%">หมายเหตุ</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
 
-                <div class="sign-box">
-                    <div class="sign-item">
-                        <br>ลงชื่อ........................................ผู้เบิก<br>
-                        (${tx.user || '........................................'})<br>
-                        ตำแหน่ง........................................<br>วันที่......../......../............
-                    </div>
-                    <div class="sign-item">
-                        <br>ลงชื่อ........................................ผู้อนุมัติ<br>
-                        (${tx.approver || '........................................'})<br>
-                        ตำแหน่ง........................................<br>วันที่......../......../............
-                    </div>
-                    <div class="sign-item">
-                        <br>ลงชื่อ........................................ผู้จ่าย<br>
-                        (........................................)<br>
-                        ตำแหน่ง........................................<br>วันที่......../......../............
-                    </div>
-                    <div class="sign-item">
-                        <br>ลงชื่อ........................................ผู้ตรวจสอบ<br>
-                        (${tx.checker || '........................................'})<br>
-                        ตำแหน่ง........................................<br>วันที่......../......../............
-                    </div>
-                </div>
+                <table class="sign-table">
+                    <tr>
+                        <td>
+                            <div class="sign-line">ลงชื่อ......................................................ผู้เบิก</div>
+                            (${tx.user || '......................................................'})<br>
+                            <br>
+                            วันที่........./........../.............
+                        </td>
+                        <td>
+                            <div class="sign-line">ลงชื่อ......................................................ผู้จ่ายพัสดุ</div>
+                            (......................................................)<br>
+                            เจ้าหน้าที่<br>
+                            วันที่........./........../.............
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="sign-caption">ตรวจสอบถูกต้องแล้ว</div>
+                            <div class="sign-line">ลงชื่อ......................................................ผู้สั่งจ่าย</div>
+                            (${tx.approver || '......................................................'})<br>
+                            หัวหน้าเจ้าหน้าที่<br>
+                            วันที่........./........../.............
+                        </td>
+                        <td>
+                            <div style="height: 24px;"></div>
+                            <div class="sign-line">ลงชื่อ......................................................ผู้ตรวจสอบ</div>
+                            (${tx.checker || '......................................................'})<br>
+                            หัวหน้าเจ้าหน้าที่<br>
+                            วันที่........./........../.............
+                        </td>
+                    </tr>
+                </table>
             `;
             openPrint(html);
         }
